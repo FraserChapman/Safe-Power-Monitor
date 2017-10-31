@@ -36,7 +36,7 @@ videoPlayer         = "/usr/bin/omxplayer --no-osd --layer 999999"    # Path to 
 shutdownVideo       = "~/Safe-Power-Monitor/lowbattshutdown.mp4"      # Alphanumeric only. No spaces.
 lowalertVideo       = "~/Safe-Power-Monitor/lowbattalert.mp4"         # Alphanumeric only. No spaces.
 
-// ---
+#--
 
 def log(code, message):
   if DebugLog is True:
