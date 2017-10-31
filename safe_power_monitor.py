@@ -1,10 +1,12 @@
 #!/usr/bin/env python2.7
 # date: 13/10/16
 # author: Camble
+# fork: Fraser
 # version: 1.0a
 # name: Safe-Power-Monitor - A utility to compliment the Safe Shutdown Switch for the Gameboy Zero project
-# description: A GPIO monitor with graceful shutdown capability and video warning overlays
-# source: https://github.com/Camble/Safe-Power-Monitor
+# description: A GPIO monitor with graceful shutdown capability and video warning overlays, 
+# source: https://github.com/FraserChapman/Safe-Power-Monitor/
+# modification: added extra class to handle custom tactile button functionality (exit, escape, reboot, etc)
 
 import RPi.GPIO as GPIO
 import subprocess
@@ -18,6 +20,7 @@ from shutil import copyfile
 AdafruitPowerBoost  = True # Set this to False if using a generic power booster/charger module ie. a "BangGood" or "GearBest" Module
 DebugLog            = True # Set this to False to disable writing to the log file
 
+functionGPIO        = 23   # GPIO BCM 23 / Physical Pin 16 (additional function button)
 powerGPIO           = 27   # GPIO BCM 27 / Physical Pin 13
 batteryGPIO         = 17   # GPIO BCM 17 / Physical Pin 11 (Set to None if not required)
 keepAliveGPIO       = 22   # GPIO BCM 22 / Physical Pin 15 (/boot/config.txt will be edited automatically)
@@ -33,7 +36,7 @@ videoPlayer         = "/usr/bin/omxplayer --no-osd --layer 999999"    # Path to 
 shutdownVideo       = "~/Safe-Power-Monitor/lowbattshutdown.mp4"      # Alphanumeric only. No spaces.
 lowalertVideo       = "~/Safe-Power-Monitor/lowbattalert.mp4"         # Alphanumeric only. No spaces.
 
-# ==================== DO NOT CHANGE ANYTHING BELOW THIS LINE ====================
+// ---
 
 def log(code, message):
   if DebugLog is True:
@@ -91,7 +94,13 @@ class PowerWatcher(GpioWatcher):
     except:
        pass
     sys.exit(0)
-
+    
+class FunctionWatcher(GpioWatcher):
+  # TODO : single press, double press, long press, etc...
+  def callbackFunc(self, channel):
+    subprocess.call(['sudo killall -9 retroarch'], shell=True)
+    log(666, "Killall button pressed.")
+    
 class BatteryWatcher(GpioWatcher):
   def __init__(self, gpio_pin, internal_pull, trigger_state):
     GpioWatcher.__init__(self, gpio_pin, internal_pull, trigger_state)
@@ -252,6 +261,7 @@ def main():
     batteryInternalResistor = None            # Use GPIO.PUD_UP, GPIO.PUD_DOWN, or None
 
   # Create some GpioWatchers
+  functionWatcher = FunctionWatcher(functionGPIO, batteryInternalResistor, batteryTriggerState)
   powerWatcher = PowerWatcher(powerGPIO, powerInternalResistor, powerTriggerState)
   if (batteryGPIO is not None):
     playCount = 0
